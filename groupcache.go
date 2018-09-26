@@ -31,6 +31,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"fmt"
+
 	pb "github.com/ztxmao/groupcache/groupcachepb"
 	"github.com/ztxmao/groupcache/lru"
 	"github.com/ztxmao/groupcache/singleflight"
@@ -206,18 +208,21 @@ func (g *Group) initPeers() {
 
 func (g *Group) Get(ctx Context, key string, dest Sink) error {
 	g.peersOnce.Do(g.initPeers)
-	g.Stats.Gets.Add(1)
+
 	if dest == nil {
 		return errors.New("groupcache: nil dest Sink")
 	}
-	value, cacheHit := g.lookupCache(key)
 	isFlush := false
 	if ctx != nil {
 		isFlush = ctx.Flush()
 	}
-	if isFlush == false && cacheHit {
-		g.Stats.CacheHits.Add(1)
-		return setSinkView(dest, value)
+	if isFlush == false {
+		value, cacheHit := g.lookupCache(key)
+		if cacheHit {
+			g.Stats.CacheHits.Add(1)
+			return setSinkView(dest, value)
+		}
+
 	}
 
 	// Optimization to avoid double unmarshalling or copying: keep
@@ -226,6 +231,8 @@ func (g *Group) Get(ctx Context, key string, dest Sink) error {
 	// case will likely be one caller.
 	destPopulated := false
 	value, destPopulated, err := g.load(ctx, key, dest)
+	fmt.Println(value)
+
 	if err != nil {
 		return err
 	}
@@ -260,9 +267,15 @@ func (g *Group) load(ctx Context, key string, dest Sink) (value ByteView, destPo
 		// 1: fn()
 		// 2: loadGroup.Do("key", fn)
 		// 2: fn()
-		if value, cacheHit := g.lookupCache(key); cacheHit {
-			g.Stats.CacheHits.Add(1)
-			return value, nil
+		var isFlush bool
+		if ctx != nil {
+			isFlush = ctx.Flush()
+		}
+		if isFlush == false {
+			if value, cacheHit := g.lookupCache(key); cacheHit {
+				g.Stats.CacheHits.Add(1)
+				return value, nil
+			}
 		}
 		g.Stats.LoadsDeduped.Add(1)
 		var value ByteView
