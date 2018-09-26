@@ -31,9 +31,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	pb "github.com/golang/groupcache/groupcachepb"
-	"github.com/golang/groupcache/lru"
-	"github.com/golang/groupcache/singleflight"
+	pb "github.com/ztxmao/groupcache/groupcachepb"
+	"github.com/ztxmao/groupcache/lru"
+	"github.com/ztxmao/groupcache/singleflight"
 )
 
 // A Getter loads data for a key.
@@ -211,8 +211,11 @@ func (g *Group) Get(ctx Context, key string, dest Sink) error {
 		return errors.New("groupcache: nil dest Sink")
 	}
 	value, cacheHit := g.lookupCache(key)
-
-	if cacheHit {
+	isFlush := false
+	if ctx != nil {
+		isFlush = ctx.Flush()
+	}
+	if isFlush == false && cacheHit {
 		g.Stats.CacheHits.Add(1)
 		return setSinkView(dest, value)
 	}

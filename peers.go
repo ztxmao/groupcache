@@ -19,13 +19,15 @@ limitations under the License.
 package groupcache
 
 import (
-	pb "github.com/golang/groupcache/groupcachepb"
+	pb "github.com/ztxmao/groupcache/groupcachepb"
 )
 
 // Context is an opaque value passed through calls to the
 // ProtoGetter. It may be nil if your ProtoGetter implementation does
 // not require a context.
-type Context interface{}
+type Context interface {
+	Flush() bool
+}
 
 // ProtoGetter is the interface that must be implemented by a peer.
 type ProtoGetter interface {

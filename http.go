@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/groupcache/consistenthash"
-	pb "github.com/golang/groupcache/groupcachepb"
+	"github.com/ztxmao/groupcache/consistenthash"
+	pb "github.com/ztxmao/groupcache/groupcachepb"
 	"github.com/golang/protobuf/proto"
 )
 
