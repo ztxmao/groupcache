@@ -231,8 +231,6 @@ func (g *Group) Get(ctx Context, key string, dest Sink) error {
 	// case will likely be one caller.
 	destPopulated := false
 	value, destPopulated, err := g.load(ctx, key, dest)
-	fmt.Println(value)
-
 	if err != nil {
 		return err
 	}
